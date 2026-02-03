@@ -4,7 +4,6 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>نظام تحليل مبادرة ارتقاء</title>
-    <link rel="icon" type="image/x-icon" href="favicon.ico">
 
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -685,7 +684,11 @@
         for (let key in mapping) {
           const el = document.getElementById("out_" + mapping[key]);
           const inp = document.getElementById("inp_" + key);
-          if (el && inp) el.innerText = inp.value;
+          if (el && inp) {
+            // التعديل الجوهري هنا:
+            // نمرر القيمة عبر دالة toArabicNumerals لتحويل الأرقام قبل العرض
+            el.innerText = toArabicNumerals(inp.value);
+          }
         }
       }
 
@@ -847,7 +850,9 @@
         globalSubjects.forEach((s) => {
           if (subjectTotals[s] > maxStudents) maxStudents = subjectTotals[s];
         });
-        document.getElementById("out_total_students").innerText = maxStudents;
+        // التعديل هنا: إضافة toArabicNumerals
+        document.getElementById("out_total_students").innerText =
+          toArabicNumerals(maxStudents);
         renderTables();
         renderStatsTable();
         renderChart();
@@ -861,6 +866,7 @@
           return;
         }
 
+        // جدول الأعداد (تم تعديله ليعرض الأرقام بالعربية)
         let htmlCounts = `
           <div class="table-section">
             <div class="section-title">أولاً: توزيع أعداد الطلاب حسب التقديرات</div>
@@ -873,13 +879,16 @@
           const total = subjectTotals[sub] || 0;
           let tr = `<tr><td style="font-weight:bold; background:#f8fafc;">${sub}</td>`;
           gradesOrder.forEach((g) => {
-            tr += `<td class="grade-cell">${globalCounts[sub][g]}</td>`;
+            // التعديل هنا: تحويل الرقم
+            tr += `<td class="grade-cell">${toArabicNumerals(globalCounts[sub][g])}</td>`;
           });
-          tr += `<td style="font-weight:bold; background:#e2e8f0;">${total}</td></tr>`;
+          // التعديل هنا: تحويل المجموع
+          tr += `<td style="font-weight:bold; background:#e2e8f0;">${toArabicNumerals(total)}</td></tr>`;
           htmlCounts += tr;
         });
         htmlCounts += `</tbody></table></div>`;
 
+        // جدول النسب (كان سليماً، لكن نضعه لضمان التوافق)
         let htmlPcts = `
           <div class="table-section">
             <div class="section-title">ثانياً: نسب توزيع التقديرات (%)</div>
@@ -980,7 +989,13 @@
               y: {
                 beginAtZero: true,
                 position: "right",
-                ticks: { font: { size: 13 } },
+                ticks: {
+                  font: { size: 13 },
+                  // هذا الكود الجديد: يحول أرقام المحور الصادي للعربية
+                  callback: function (value) {
+                    return toArabicNumerals(value);
+                  },
+                },
               },
             },
             plugins: {
@@ -993,6 +1008,18 @@
                 text: "الرسم البياني التحليلي للمواد",
                 font: { size: 16, family: "Cairo", weight: "bold" },
                 padding: { bottom: 10 },
+              },
+              // هذا الكود الجديد: يحول الأرقام عند تمرير الماوس للعربية
+              tooltip: {
+                callbacks: {
+                  label: function (context) {
+                    return (
+                      context.dataset.label +
+                      ": " +
+                      toArabicNumerals(context.raw)
+                    );
+                  },
+                },
               },
             },
           },
